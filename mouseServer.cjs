@@ -47,7 +47,8 @@ wss.on('connection', (ws) => {
 
             // Move cursor if coordinates are valid
             if (cursor && typeof cursor.x === 'number' && typeof cursor.y === 'number') {
-                MouseService.moveCursor(cursor.x, cursor.y);
+                const invertedX = 100 - cursor.x;
+                MouseService.moveCursor(invertedX, cursor.y);
             }
 
             // Click on gesture transition from OPEN to CLOSED (debounce)

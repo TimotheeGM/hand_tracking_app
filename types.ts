@@ -6,6 +6,9 @@ export interface BoundingBox {
   confidence: number;
 }
 
+export type HandGesture = 'OPEN' | 'CLOSED' | 'UNKNOWN';
+export type HandFacing = 'FRONT' | 'BACK' | 'UNKNOWN';
+
 export enum TrackerStatus {
   IDLE = 'IDLE',
   CONNECTING = 'CONNECTING',

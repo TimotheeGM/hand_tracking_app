@@ -2,12 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { VisionService } from './services/visionService';
 import { TrackerOverlay } from './components/TrackerOverlay';
 import { ControlPanel } from './components/ControlPanel';
-import { BoundingBox, TrackerStatus } from './types';
+import { BoundingBox, TrackerStatus, HandGesture, HandFacing } from './types';
 
 const App: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [status, setStatus] = useState<TrackerStatus>(TrackerStatus.IDLE);
   const [boundingBox, setBoundingBox] = useState<BoundingBox | null>(null);
+  const [gesture, setGesture] = useState<HandGesture>('UNKNOWN');
+  const [facing, setFacing] = useState<HandFacing>('UNKNOWN');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
   const visionServiceRef = useRef<VisionService | null>(null);
@@ -25,20 +27,22 @@ const App: React.FC = () => {
       const result = visionServiceRef.current.detect(videoRef.current);
       
       // Only update state if a NEW frame was processed.
-      // If result.processed is false, it means we are faster than the webcam, so we wait.
       if (result.processed) {
         if (result.box) {
-          // Hand Found: Immediately update and reset missing counter
+          // Hand Found
           setBoundingBox(result.box);
+          setGesture(result.gesture);
+          setFacing(result.facing);
           missingFramesRef.current = 0;
         } else {
           // Hand Not Found: Increment missing counter
           missingFramesRef.current++;
           
-          // Grace Period: Keep the last known position for 5 frames (~150ms)
-          // This prevents the box from snapping back to the center during quick motion blur
+          // Grace Period: Keep the last known position for 5 frames
           if (missingFramesRef.current > 5) {
             setBoundingBox(null);
+            setGesture('UNKNOWN');
+            setFacing('UNKNOWN');
           }
         }
       }
@@ -51,6 +55,8 @@ const App: React.FC = () => {
     setErrorMsg(null);
     setStatus(TrackerStatus.CONNECTING);
     setBoundingBox(null);
+    setGesture('UNKNOWN');
+    setFacing('UNKNOWN');
     missingFramesRef.current = 0;
 
     try {
@@ -107,6 +113,8 @@ const App: React.FC = () => {
     }
     
     setBoundingBox(null);
+    setGesture('UNKNOWN');
+    setFacing('UNKNOWN');
     setStatus(TrackerStatus.IDLE);
   };
 
@@ -145,7 +153,7 @@ const App: React.FC = () => {
         
         {/* Overlay Container */}
         <div className="absolute inset-0 pointer-events-none transform -scale-x-100">
-           <TrackerOverlay box={boundingBox} status={status} />
+           <TrackerOverlay box={boundingBox} status={status} gesture={gesture} facing={facing} />
         </div>
 
         {status === TrackerStatus.IDLE && (

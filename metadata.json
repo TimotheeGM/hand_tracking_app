@@ -1,0 +1,8 @@
+{
+  "name": "Gemini Hand Tracker",
+  "description": "Real-time open palm tracking using Gemini Live API computer vision capabilities.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

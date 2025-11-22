@@ -10,22 +10,23 @@ const App: React.FC = () => {
   const [boundingBox, setBoundingBox] = useState<BoundingBox | null>(null);
   const [gesture, setGesture] = useState<HandGesture>('UNKNOWN');
   const [facing, setFacing] = useState<HandFacing>('UNKNOWN');
+  const [cursor, setCursor] = useState<{ x: number, y: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  
+
   const visionServiceRef = useRef<VisionService | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const requestRef = useRef<number | null>(null);
-  
+
   // Grace period counter to prevent flickering when hand is lost for just 1-2 frames
   const missingFramesRef = useRef<number>(0);
 
   // Main Tracking Loop
   const loop = () => {
     if (status === TrackerStatus.ERROR) return;
-    
+
     if (videoRef.current && visionServiceRef.current && videoRef.current.readyState >= 2) {
       const result = visionServiceRef.current.detect(videoRef.current);
-      
+
       // Only update state if a NEW frame was processed.
       if (result.processed) {
         if (result.box) {
@@ -33,21 +34,23 @@ const App: React.FC = () => {
           setBoundingBox(result.box);
           setGesture(result.gesture);
           setFacing(result.facing);
+          setCursor(result.cursor);
           missingFramesRef.current = 0;
         } else {
           // Hand Not Found: Increment missing counter
           missingFramesRef.current++;
-          
+
           // Grace Period: Keep the last known position for 5 frames
           if (missingFramesRef.current > 5) {
             setBoundingBox(null);
             setGesture('UNKNOWN');
             setFacing('UNKNOWN');
+            setCursor(null);
           }
         }
       }
     }
-    
+
     requestRef.current = requestAnimationFrame(loop);
   };
 
@@ -57,6 +60,7 @@ const App: React.FC = () => {
     setBoundingBox(null);
     setGesture('UNKNOWN');
     setFacing('UNKNOWN');
+    setCursor(null);
     missingFramesRef.current = 0;
 
     try {
@@ -67,15 +71,15 @@ const App: React.FC = () => {
       await visionServiceRef.current.initialize();
 
       // 2. Setup Webcam
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
           facingMode: "user"
         },
-        audio: false 
+        audio: false
       });
-      
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -111,10 +115,11 @@ const App: React.FC = () => {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    
+
     setBoundingBox(null);
     setGesture('UNKNOWN');
     setFacing('UNKNOWN');
+    setCursor(null);
     setStatus(TrackerStatus.IDLE);
   };
 
@@ -150,10 +155,10 @@ const App: React.FC = () => {
           playsInline
           muted
         />
-        
+
         {/* Overlay Container */}
         <div className="absolute inset-0 pointer-events-none transform -scale-x-100">
-           <TrackerOverlay box={boundingBox} status={status} gesture={gesture} facing={facing} />
+          <TrackerOverlay box={boundingBox} status={status} gesture={gesture} facing={facing} cursor={cursor} />
         </div>
 
         {status === TrackerStatus.IDLE && (
@@ -163,10 +168,10 @@ const App: React.FC = () => {
         )}
       </div>
 
-      <ControlPanel 
-        status={status} 
-        onStart={startTracking} 
-        onStop={stopTracking} 
+      <ControlPanel
+        status={status}
+        onStart={startTracking}
+        onStop={stopTracking}
       />
     </div>
   );

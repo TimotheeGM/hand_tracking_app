@@ -4,6 +4,49 @@ This project is a real-time, browser-based computer vision application that trac
 
 It was originally built using server-side AI but was refactored to use **MediaPipe Tasks Vision** for ultra-low latency (60fps), privacy (no video upload), and high-precision coordinate tracking.
 
+## 🚀 Getting Started
+
+### Quick Start
+
+**Start the app:**
+```bash
+npm start
+# or
+./start.ps1
+```
+
+**Stop the app:**
+```bash
+npm run stop
+# or
+./stop.ps1
+```
+
+**Restart the app:**
+```bash
+npm run restart
+# or
+./restart.ps1
+```
+
+The app will automatically find an available port (starting from 3000) and display the URL in the terminal.
+
+### First Time Setup
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Start the development server:**
+   ```bash
+   npm start
+   ```
+
+3. **Open your browser** to the URL shown in the terminal (e.g., `http://localhost:3000`)
+
+4. **Allow camera access** when prompted by your browser
+
 ## 🌟 Key Features
 
 1.  **Real-Time Tracking**: "Locks on" to the hand with a green bounding box.

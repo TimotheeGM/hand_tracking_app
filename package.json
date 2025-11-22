@@ -5,14 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "vite",
+    "stop": "powershell -ExecutionPolicy Bypass -File stop.ps1",
+    "restart": "powershell -ExecutionPolicy Bypass -File restart.ps1",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "react": "^19.2.0",
     "@mediapipe/tasks-vision": "0.10.9",
-    "react-dom": "^19.2.0",
-    "@google/genai": "^1.30.0"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

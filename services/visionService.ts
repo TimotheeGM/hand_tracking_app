@@ -1,10 +1,11 @@
 import { FilesetResolver, HandLandmarker, HandLandmarkerResult } from "@mediapipe/tasks-vision";
-import { BoundingBox, HandGesture, HandFacing } from "../types";
+import { BoundingBox, HandGesture, HandFacing, CursorPosition } from "../types";
 
 export interface DetectionResult {
   box: BoundingBox | null;
   gesture: HandGesture;
   facing: HandFacing;
+  cursor: CursorPosition | null;
   processed: boolean;
 }
 
@@ -17,7 +18,7 @@ export class VisionService {
       const vision = await FilesetResolver.forVisionTasks(
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.9/wasm"
       );
-      
+
       this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
@@ -29,7 +30,7 @@ export class VisionService {
         minHandPresenceConfidence: 0.5,
         minTrackingConfidence: 0.5
       });
-      
+
       console.log("MediaPipe HandLandmarker loaded");
     } catch (error) {
       console.error("Error initializing MediaPipe:", error);
@@ -38,11 +39,11 @@ export class VisionService {
   }
 
   detect(video: HTMLVideoElement): DetectionResult {
-    if (!this.handLandmarker) return { box: null, gesture: 'UNKNOWN', facing: 'UNKNOWN', processed: false };
-    
+    if (!this.handLandmarker) return { box: null, gesture: 'UNKNOWN', facing: 'UNKNOWN', cursor: null, processed: false };
+
     // Only process if the video frame has actually updated.
     if (video.currentTime === this.lastVideoTime) {
-      return { box: null, gesture: 'UNKNOWN', facing: 'UNKNOWN', processed: false };
+      return { box: null, gesture: 'UNKNOWN', facing: 'UNKNOWN', cursor: null, processed: false };
     }
     this.lastVideoTime = video.currentTime;
 
@@ -51,10 +52,10 @@ export class VisionService {
     if (results.landmarks && results.landmarks.length > 0) {
       const landmarks = results.landmarks[0]; // Get first hand
       const handedness = results.handednesses[0][0].categoryName; // "Left" or "Right"
-      
+
       // 1. Calculate Bounding Box
       let xmin = 1, ymin = 1, xmax = 0, ymax = 0;
-      
+
       for (const point of landmarks) {
         if (point.x < xmin) xmin = point.x;
         if (point.x > xmax) xmax = point.x;
@@ -71,9 +72,20 @@ export class VisionService {
 
       // 2. Detect Gesture (Open vs Closed Fist)
       const gesture = this.detectGesture(landmarks);
-      
+
       // 3. Detect Facing (Front/Palm vs Back)
       const facing = this.detectFacing(landmarks, handedness);
+
+      // 4. Extract Cursor (Wrist - Landmark 0) with Vertical Offset
+      // User requested "wrist only" for stability, but offset "higher" (screen-space up).
+      // We apply a fixed negative Y offset to move the cursor up from the wrist.
+      const wrist = landmarks[0];
+      const yOffset = -0.25; // Move up by 25% of screen height (approx "one hand" length)
+
+      const cursor = {
+        x: wrist.x * 100,
+        y: (wrist.y + yOffset) * 100
+      };
 
       return {
         box: {
@@ -85,12 +97,13 @@ export class VisionService {
         },
         gesture,
         facing,
+        cursor,
         processed: true
       };
     }
 
     // Frame processed, but no hand found
-    return { box: null, gesture: 'UNKNOWN', facing: 'UNKNOWN', processed: true };
+    return { box: null, gesture: 'UNKNOWN', facing: 'UNKNOWN', cursor: null, processed: true };
   }
 
   private detectGesture(landmarks: any[]): HandGesture {
@@ -104,7 +117,7 @@ export class VisionService {
     // in a fist, the PIP is effectively the furthest point from the wrist in the curl,
     // while the Tip is tucked in close to the wrist/palm.
     // This works better for "Back of Hand" detection than comparing Tip vs Base(MCP).
-    
+
     const wrist = landmarks[0];
     const fingers = [
       { tip: 8, pip: 6 },   // Index
@@ -118,7 +131,7 @@ export class VisionService {
     for (const finger of fingers) {
       const tip = landmarks[finger.tip];
       const pip = landmarks[finger.pip];
-      
+
       // Calculate Euclidean distance to wrist
       const distTip = Math.sqrt(Math.pow(tip.x - wrist.x, 2) + Math.pow(tip.y - wrist.y, 2));
       const distPip = Math.sqrt(Math.pow(pip.x - wrist.x, 2) + Math.pow(pip.y - wrist.y, 2));
@@ -136,7 +149,7 @@ export class VisionService {
   private detectFacing(landmarks: any[], handedness: string): HandFacing {
     // Robust facing detection using Cross Product (Z-direction).
     // Works regardless of hand rotation (vertical or horizontal).
-    
+
     // 0: Wrist, 5: IndexMCP, 17: PinkyMCP
     const wrist = landmarks[0];
     const index = landmarks[5];
@@ -158,7 +171,7 @@ export class VisionService {
     // For a LEFT hand (or mirrored Right appearing as Left):
     // - Palm Facing Camera: CrossZ is POSITIVE
     // - Back Facing Camera: CrossZ is NEGATIVE
-    
+
     if (handedness === 'Right') {
       return crossZ < 0 ? 'FRONT' : 'BACK';
     } else {

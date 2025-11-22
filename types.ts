@@ -22,3 +22,8 @@ export interface HandCoordinates {
   width: string;
   height: string;
 }
+
+export interface CursorPosition {
+  x: number;
+  y: number;
+}

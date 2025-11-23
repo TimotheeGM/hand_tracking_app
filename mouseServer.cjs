@@ -53,8 +53,13 @@ wss.on('connection', (ws) => {
 
             // Click on gesture transition from OPEN to CLOSED (debounce)
             if (gesture === 'CLOSED' && prevGesture !== 'CLOSED') {
-                console.log('Click triggered');
-                MouseService.click();
+                if (msg.facing === 'BACK') {
+                    console.log('Right Click triggered (Back of Hand)');
+                    MouseService.rightClick();
+                } else {
+                    console.log('Left Click triggered (Palm)');
+                    MouseService.click();
+                }
             }
 
             prevGesture = gesture;

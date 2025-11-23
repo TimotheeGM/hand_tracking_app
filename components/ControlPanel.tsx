@@ -3,11 +3,13 @@ import { TrackerStatus } from '../types';
 
 interface ControlPanelProps {
   status: TrackerStatus;
+  isMouseConnected: boolean;
   onStart: () => void;
   onStop: () => void;
+  onMiniMode: () => void;
 }
 
-export const ControlPanel: React.FC<ControlPanelProps> = ({ status, onStart, onStop }) => {
+export const ControlPanel: React.FC<ControlPanelProps> = ({ status, isMouseConnected, onStart, onStop, onMiniMode }) => {
   const isTracking = status === TrackerStatus.ACTIVE || status === TrackerStatus.CONNECTING;
 
   const handleStopServer = async () => {
@@ -26,9 +28,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ status, onStart, onS
       <div className="bg-slate-800/80 backdrop-blur-md border border-slate-700 p-4 rounded-2xl shadow-2xl w-full flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className={`w-3 h-3 rounded-full ${status === TrackerStatus.ACTIVE ? 'bg-green-500 animate-pulse' :
-              status === TrackerStatus.CONNECTING ? 'bg-yellow-500 animate-bounce' :
-                status === TrackerStatus.ERROR ? 'bg-red-500' :
-                  'bg-slate-500'
+            status === TrackerStatus.CONNECTING ? 'bg-yellow-500 animate-bounce' :
+              status === TrackerStatus.ERROR ? 'bg-red-500' :
+                'bg-slate-500'
             }`} />
           <div className="flex flex-col">
             <span className="text-sm font-medium text-slate-200 uppercase tracking-wider leading-none">
@@ -40,6 +42,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ status, onStart, onS
             {status === TrackerStatus.ACTIVE && (
               <span className="text-[10px] text-slate-400 font-mono mt-1">STREAMING VIDEO...</span>
             )}
+            <span className={`text-[10px] font-mono mt-0.5 ${isMouseConnected ? 'text-green-400' : 'text-red-400'}`}>
+              MOUSE SERVER: {isMouseConnected ? 'CONNECTED' : 'DISCONNECTED'}
+            </span>
           </div>
         </div>
 
@@ -60,13 +65,23 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ status, onStart, onS
         )}
       </div>
 
-      {/* Stop Server Button */}
-      <button
-        onClick={handleStopServer}
-        className="px-4 py-2 bg-slate-700/60 hover:bg-slate-600/80 text-slate-300 text-sm font-medium rounded-lg transition-colors border border-slate-600/50"
-      >
-        🔴 Stop Server
-      </button>
+      <div className="flex gap-2 w-full">
+        {/* Mini Mode Button */}
+        <button
+          onClick={onMiniMode}
+          className="flex-1 px-4 py-2 bg-slate-700/60 hover:bg-slate-600/80 text-slate-300 text-sm font-medium rounded-lg transition-colors border border-slate-600/50"
+        >
+          🪟 Mini Mode
+        </button>
+
+        {/* Stop Server Button */}
+        <button
+          onClick={handleStopServer}
+          className="flex-1 px-4 py-2 bg-slate-700/60 hover:bg-slate-600/80 text-slate-300 text-sm font-medium rounded-lg transition-colors border border-slate-600/50"
+        >
+          🔴 Stop Server
+        </button>
+      </div>
     </div>
   );
 };

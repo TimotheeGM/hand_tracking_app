@@ -9,7 +9,20 @@ class MouseService {
     }
 
     static click() {
-        robot.mouseClick();
+        console.log('Executing robotjs click...');
+        robot.mouseToggle('down');
+        setTimeout(() => {
+            robot.mouseToggle('up');
+            console.log('Click released');
+        }, 50); // 50ms press duration
+    }
+    static rightClick() {
+        console.log('Executing robotjs RIGHT click...');
+        robot.mouseToggle('down', 'right');
+        setTimeout(() => {
+            robot.mouseToggle('up', 'right');
+            console.log('Right Click released');
+        }, 50);
     }
 }
 

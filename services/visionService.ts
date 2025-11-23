@@ -1,4 +1,14 @@
-import { FilesetResolver, HandLandmarker, HandLandmarkerResult } from "@mediapipe/tasks-vision";
+/**
+ * @file visionService.ts
+ * @description Encapsulates MediaPipe HandLandmarker logic.
+ * 
+ * Responsibilities:
+ * - Loads MediaPipe WASM and models
+ * - Performs hand detection on video frames
+ * - Calculates Bounding Box, Gesture (Fist/Open), and Facing (Front/Back)
+ * - Computes cursor position relative to the wrist
+ */
+import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 import { BoundingBox, HandGesture, HandFacing, CursorPosition } from "../types";
 
 export interface DetectionResult {
@@ -47,7 +57,7 @@ export class VisionService {
     }
     this.lastVideoTime = video.currentTime;
 
-    const results: HandLandmarkerResult = this.handLandmarker.detectForVideo(video, performance.now());
+    const results = this.handLandmarker.detectForVideo(video, performance.now());
 
     if (results.landmarks && results.landmarks.length > 0) {
       const landmarks = results.landmarks[0]; // Get first hand
@@ -77,10 +87,8 @@ export class VisionService {
       const facing = this.detectFacing(landmarks, handedness);
 
       // 4. Extract Cursor (Wrist - Landmark 0) with Vertical Offset
-      // User requested "wrist only" for stability, but offset "higher" (screen-space up).
-      // We apply a fixed negative Y offset to move the cursor up from the wrist.
       const wrist = landmarks[0];
-      const yOffset = -0.25; // Move up by 25% of screen height (approx "one hand" length)
+      const yOffset = -0.25; // Move up by 25% of screen height
 
       const cursor = {
         x: wrist.x * 100,
@@ -107,17 +115,6 @@ export class VisionService {
   }
 
   private detectGesture(landmarks: any[]): HandGesture {
-    // Landmark indices: 0=wrist
-    // Fingers:
-    // Index: Tip 8, PIP 6
-    // Middle: Tip 12, PIP 10
-    // Ring: Tip 16, PIP 14
-    // Pinky: Tip 20, PIP 18
-    // We use PIP (Proximal Interphalangeal Joint) as the reference because
-    // in a fist, the PIP is effectively the furthest point from the wrist in the curl,
-    // while the Tip is tucked in close to the wrist/palm.
-    // This works better for "Back of Hand" detection than comparing Tip vs Base(MCP).
-
     const wrist = landmarks[0];
     const fingers = [
       { tip: 8, pip: 6 },   // Index
@@ -148,8 +145,6 @@ export class VisionService {
 
   private detectFacing(landmarks: any[], handedness: string): HandFacing {
     // Robust facing detection using Cross Product (Z-direction).
-    // Works regardless of hand rotation (vertical or horizontal).
-
     // 0: Wrist, 5: IndexMCP, 17: PinkyMCP
     const wrist = landmarks[0];
     const index = landmarks[5];
@@ -161,16 +156,7 @@ export class VisionService {
     const v2 = { x: pinky.x - wrist.x, y: pinky.y - wrist.y };
 
     // Cross Product Z-component: (x1 * y2) - (y1 * x2)
-    // This tells us the winding order/direction of the plane.
     const crossZ = (v1.x * v2.y) - (v1.y * v2.x);
-
-    // In Web Coordinate system (Y is down):
-    // For a RIGHT hand:
-    // - Palm Facing Camera: CrossZ is NEGATIVE
-    // - Back Facing Camera: CrossZ is POSITIVE
-    // For a LEFT hand (or mirrored Right appearing as Left):
-    // - Palm Facing Camera: CrossZ is POSITIVE
-    // - Back Facing Camera: CrossZ is NEGATIVE
 
     if (handedness === 'Right') {
       return crossZ < 0 ? 'FRONT' : 'BACK';

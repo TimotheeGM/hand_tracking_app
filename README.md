@@ -56,6 +56,8 @@ The app will automatically find an available port (starting from 3000) and displ
     *   **Left Click**: Closing a fist while showing the **Palm** (Cyan Overlay).
     *   **Right Click**: Closing a fist while showing the **Back** of the hand (Purple Overlay).
 5.  **Motion Smoothing**: Handles frame synchronization and tracking loss with a grace period to prevent UI flickering.
+6.  **Mini Mode**: A lightweight popup window that keeps tracking active even when the main browser window is minimized or in the background.
+7.  **Background Operation**: Uses a silent audio loop and `setTimeout` (instead of `requestAnimationFrame`) to prevent browser throttling when the tab is inactive.
 
 ---
 
@@ -66,7 +68,7 @@ The application follows a strict unidirectional data flow, synchronized with the
 ```mermaid
 graph TD
     A[Webcam Feed] -->|Raw Video Frames| B(App Loop)
-    B -->|RequestAnimationFrame| C{Vision Service}
+    B -->|setTimeout Loop| C{Vision Service}
     
     subgraph MediaPipe Processing
     C -->|Detect| D[Hand Landmarker]
@@ -82,12 +84,17 @@ graph TD
     F & G & H -->|Result Object| I[React State]
     I -->|Props| J[TrackerOverlay Component]
     J -->|Render| K[User Interface]
+    
+    subgraph Mouse Control
+    I -->|WebSocket| L[Node.js Mouse Server]
+    L -->|RobotJS| M[OS Cursor]
+    end
 ```
 
 ### Step-by-Step Pipeline
 
 1.  **Input**: The `App.tsx` initializes the webcam stream via `navigator.mediaDevices.getUserMedia`.
-2.  **Synchronization**: A `requestAnimationFrame` loop triggers roughly 60 times per second. It passes the current video video element to the `VisionService`.
+2.  **Synchronization**: A `setTimeout` loop triggers roughly 30 times per second (33ms). It passes the current video video element to the `VisionService`.
 3.  **Detection (`visionService.ts`)**:
     *   The `HandLandmarker` analyzes the pixel data.
     *   It returns 21 3D landmarks (x, y, z) representing the hand skeleton.
@@ -96,6 +103,7 @@ graph TD
     *   **Gesture (Fist)**: The system calculates the Euclidean distance from the **Wrist** to the **Finger Tips** vs the **Wrist** to the **PIP Joints** (middle knuckles). If 3+ tips are closer to the wrist than their PIP joints, it is a **Fist**.
     *   **Orientation (Facing)**: The system calculates the **Cross Product** of two vectors (Wrist->Index and Wrist->Pinky). The Z-component of the result determines the winding order, revealing if the palm is facing forward or backward, regardless of hand rotation.
 5.  **Rendering**: The results are stored in React State, triggering a re-render of the `TrackerOverlay`, which draws the box and labels (Green, Cyan, or Purple) based on the logic state.
+6.  **Mouse Control**: The tracking data (cursor position, gesture, facing) is sent via WebSocket to a local Node.js server (`mouseServer.cjs`), which uses `robotjs` to move the OS cursor and trigger clicks.
 
 ---
 
@@ -116,6 +124,12 @@ Instead, we use Vector Math:
 3.  Calculate `CrossProduct(A, B)`
 
 The sign (+/-) of the resulting Z-component tells us the direction the plane of the hand is facing relative to the camera.
+
+### 3. Background Persistence
+Browsers aggressively throttle inactive tabs (slowing down `requestAnimationFrame` to 1fps). To bypass this for continuous background tracking:
+1.  **Silent Audio**: We play a looped silent audio track to trick the browser into thinking the page is "active media".
+2.  **`setTimeout` Loop**: We replaced `requestAnimationFrame` with `setTimeout` for the tracking loop, as it is less strictly throttled in this context.
+3.  **Mini Mode**: A dedicated popup window that can be kept visible while working in other apps.
 
 ---
 

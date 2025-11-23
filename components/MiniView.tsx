@@ -1,3 +1,13 @@
+/**
+ * @file MiniView.tsx
+ * @description Minimalist popup window component for background monitoring.
+ * 
+ * Features:
+ * - Canvas-based rendering for performance
+ * - Draggable header region
+ * - Simplified controls
+ * - Receives state updates via BroadcastChannel
+ */
 import React, { useEffect, useRef } from 'react';
 import { TrackerStatus, HandGesture, HandFacing, BoundingBox } from '../types';
 

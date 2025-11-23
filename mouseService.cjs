@@ -1,3 +1,12 @@
+/**
+ * @file mouseService.cjs
+ * @description Wrapper around robotjs for mouse interactions.
+ * 
+ * Responsibilities:
+ * - Translates normalized coordinates (0-100) to screen pixels
+ * - Executes mouse clicks (Left and Right)
+ * - Handles mouse button toggling
+ */
 const robot = require('robotjs');
 
 class MouseService {
@@ -9,19 +18,19 @@ class MouseService {
     }
 
     static click() {
-        console.log('Executing robotjs click...');
+        // console.log('Executing robotjs click...');
         robot.mouseToggle('down');
         setTimeout(() => {
             robot.mouseToggle('up');
-            console.log('Click released');
+            // console.log('Click released');
         }, 50); // 50ms press duration
     }
     static rightClick() {
-        console.log('Executing robotjs RIGHT click...');
+        // console.log('Executing robotjs RIGHT click...');
         robot.mouseToggle('down', 'right');
         setTimeout(() => {
             robot.mouseToggle('up', 'right');
-            console.log('Right Click released');
+            // console.log('Right Click released');
         }, 50);
     }
 }

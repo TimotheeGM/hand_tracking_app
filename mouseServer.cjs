@@ -1,3 +1,13 @@
+/**
+ * @file mouseServer.cjs
+ * @description Node.js WebSocket server for OS-level mouse control.
+ * 
+ * Responsibilities:
+ * - Listens for WebSocket connections from the frontend
+ * - Receives cursor coordinates and click events
+ * - Delegates mouse actions to MouseService
+ * - Provides an HTTP endpoint for graceful shutdown
+ */
 const { WebSocketServer } = require('ws');
 const { MouseService } = require('./mouseService.cjs');
 const http = require('http');
@@ -54,10 +64,10 @@ wss.on('connection', (ws) => {
             // Click on gesture transition from OPEN to CLOSED (debounce)
             if (gesture === 'CLOSED' && prevGesture !== 'CLOSED') {
                 if (msg.facing === 'BACK') {
-                    console.log('Right Click triggered (Back of Hand)');
+                    // console.log('Right Click triggered (Back of Hand)');
                     MouseService.rightClick();
                 } else {
-                    console.log('Left Click triggered (Palm)');
+                    // console.log('Left Click triggered (Palm)');
                     MouseService.click();
                 }
             }

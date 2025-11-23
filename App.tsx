@@ -1,3 +1,15 @@
+/**
+ * @file App.tsx
+ * @description Main application entry point. Manages the tracking loop, state, and WebSocket connection.
+ * @author TimotheeGM / Antigravity
+ * 
+ * Responsibilities:
+ * - Initializes MediaPipe VisionService
+ * - Manages Webcam stream
+ * - Runs the main tracking loop (via setTimeout for background persistence)
+ * - Handles WebSocket communication with the mouse server
+ * - Manages Mini Mode and BroadcastChannel communication
+ */
 import React, { useEffect, useRef, useState } from 'react';
 import { VisionService } from './services/visionService';
 import { TrackerOverlay } from './components/TrackerOverlay';
@@ -169,6 +181,20 @@ const App: React.FC = () => {
     statusRef.current = TrackerStatus.IDLE;
   };
 
+  const handleError = (msg: string) => {
+    setStatus(TrackerStatus.ERROR);
+    setErrorMsg(msg);
+    stopTracking();
+  };
+
+  const openMiniWindow = () => {
+    window.open(
+      '/?mode=mini',
+      'HandTrackerMini',
+      'width=320,height=240,menubar=no,toolbar=no,location=no,status=no'
+    );
+  };
+
   useEffect(() => {
     // Check if we are in Mini Mode
     const params = new URLSearchParams(window.location.search);
@@ -206,20 +232,6 @@ const App: React.FC = () => {
       });
     }
   }, [status, boundingBox, gesture, facing, isMiniMode]);
-
-  const handleError = (msg: string) => {
-    setStatus(TrackerStatus.ERROR);
-    setErrorMsg(msg);
-    stopTracking();
-  };
-
-  const openMiniWindow = () => {
-    window.open(
-      '/?mode=mini',
-      'HandTrackerMini',
-      'width=320,height=240,menubar=no,toolbar=no,location=no,status=no'
-    );
-  };
 
   useEffect(() => {
     return () => stopTracking();

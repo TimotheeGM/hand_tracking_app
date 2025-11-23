@@ -1,3 +1,13 @@
+/**
+ * @file ControlPanel.tsx
+ * @description UI component for application controls and status display.
+ * 
+ * Features:
+ * - Start/Stop tracking buttons
+ * - Mini Mode toggle
+ * - Server Shutdown button
+ * - Connection status indicators
+ */
 import React from 'react';
 import { TrackerStatus } from '../types';
 

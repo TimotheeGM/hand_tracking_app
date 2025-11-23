@@ -1,3 +1,13 @@
+/**
+ * @file TrackerOverlay.tsx
+ * @description Visual feedback layer overlaid on the video feed.
+ * 
+ * Renders:
+ * - Bounding Box (Green/Cyan/Purple)
+ * - Status Labels (LOCKED, LEFT CLICK, RIGHT CLICK)
+ * - Virtual Cursor
+ * - Debug info (Gesture/Facing)
+ */
 import React from 'react';
 import { BoundingBox, TrackerStatus, HandGesture, HandFacing } from '../types';
 

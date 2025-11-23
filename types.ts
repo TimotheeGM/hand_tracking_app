@@ -1,3 +1,7 @@
+/**
+ * @file types.ts
+ * @description Shared TypeScript definitions for the application.
+ */
 export interface BoundingBox {
   ymin: number;
   xmin: number;
@@ -14,13 +18,6 @@ export enum TrackerStatus {
   CONNECTING = 'CONNECTING',
   ACTIVE = 'ACTIVE',
   ERROR = 'ERROR',
-}
-
-export interface HandCoordinates {
-  top: string;
-  left: string;
-  width: string;
-  height: string;
 }
 
 export interface CursorPosition {
